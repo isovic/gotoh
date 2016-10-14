@@ -29,7 +29,7 @@ OBJ_FILES_FOLDER_MAC := $(addprefix $(OBJ_MAC)/,$(OBJ_FILES))
 
 LIB_DIRS = -L"/usr/local/lib"
 CC_LIBS = -static-libgcc -static-libstdc++ -D__cplusplus=201103L
-INCLUDE = -I"./src/" -I"/usr/include/" $(CODEBASE_SRC_FOLDERS)
+INCLUDE = -I"./src/" -I"./lib/gtest" -I"/usr/include/" $(CODEBASE_SRC_FOLDERS)
 # -I"codebase/.*/src/"
 # -I$(wildcard $(CODEBASE)/*/src/)
 # -I"codebase/seqlib/src/"

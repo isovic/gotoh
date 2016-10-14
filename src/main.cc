@@ -10,7 +10,9 @@
 #include <stdint.h>
 #include <iostream>
 #include <string>
+#include "../lib/gtest/gtest.h"
 #include "align.h"
+#include "align_test.h"
 using namespace std;
 
 //G A A T T C A G T T A
@@ -21,13 +23,18 @@ using namespace std;
 //|     |   | |   |     |
 //G G _ A _ T C _ G _ _ A
 
-int main() {
-  std::string target = "GAATTCAGTTA";
-  std::string query = "GGATCGA";
+int main(int argc, char **argv) {
+//  std::string target = "GAATTCAGTTA";
+//  std::string query = "GGATCGA";
+//
+////  std::string target = "ACCCGA";
+////  std::string query = "ACGA";
+//
+//  printf ("Aligning:\n  query: '%s'\n  target: '%s'\n", query.c_str(), target.c_str());
+//
+//  is::Align aln(query, target, is::Penalties(1, -1, -1, -1), is::kGlobal, is::GlobalMargins());
 
-  printf ("Aligning:\n  query: '%s'\n  target: '%s'\n", query.c_str(), target.c_str());
-
-  is::Align aln(query, target, is::Penalties(1, -1, -1, -1), is::kGlobal, is::GlobalMargins());
-
-  return 0;
+//  AlignTest1();
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

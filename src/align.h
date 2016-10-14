@@ -36,10 +36,10 @@ class Penalties {
 class GlobalMargins {
  public:
   GlobalMargins()
-      : top(false),
-        left(false),
-        bottom(false),
-        right(false) {
+      : top(true),
+        left(true),
+        bottom(true),
+        right(true) {
   }
   GlobalMargins(bool _top, bool _left, bool _bottom, bool _right)
       : top(_top),
