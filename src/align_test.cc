@@ -9,7 +9,8 @@
 #include <string>
 #include "../lib/gtest/gtest.h"
 
-TEST(AlignTest1, BasicTest1) {
+// TEST(AlignTest1, BasicTest1) {
+void AlignTest1() {
   is::Align aln1(std::string("GGATCGA"), std::string("GAATTCAGTTA"), is::Penalties(1, -1, -1, -1), is::kGlobal, is::GlobalMargins());
   printf ("\n");
 //  EXPECT_EQ(
@@ -24,5 +25,5 @@ TEST(AlignTest1, BasicTest1) {
   is::Align aln4(std::string("A"), std::string("T"), is::Penalties(1, -1, -1, -1), is::kGlobal, is::GlobalMargins());
   printf ("\n");
 
-  EXPECT_EQ(1, 1);
+//  EXPECT_EQ(1, 1);
 }

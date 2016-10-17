@@ -82,44 +82,7 @@ int Align::AlignGlobal(const char* q, int64_t ql, const char* t, int64_t tl,
 //  PrintMatrix(dir);
 //  printf ("Performing traceback.\n");
 
-  // Traceback.
-  std::stringstream ssq, sst, ssm;
-  int32_t row = ql;
-  int32_t col = tl;
-  while (row > 0 && col > 0) {
-    if (dir[row][col] == 0) {
-      ssq << q[row-1];
-      sst << t[col-1];
-      ssm << ((q[row-1] == t[col-1]) ? "|" : "X");
-      row -= 1; col -= 1;
-    } else if (dir[row][col] == 2) {
-      ssq << "-";
-      sst << t[col-1];
-      ssm << " ";
-      col -= 1;
-    } else if (dir[row][col] == 1) {
-      ssq << q[row-1];
-      sst << "-";
-      ssm << " ";
-      row -= 1;
-    } else {
-      fprintf (stderr, "ERROR: Unknown alignment move! Exiting.\n");
-      exit(1);
-    }
-  }
-
-  while (row > 0) {
-    ssq << q[row-1];
-    sst << "-";
-    ssm << " ";
-    row -= 1;
-  }
-  while (col > 0) {
-    ssq << "-";
-    sst << t[col-1];
-    ssm << " ";
-    col -= 1;
-  }
+  Traceback(M, dir, ql+1, tl+1, ql, tl);
 
   std::string alnq = ssq.str();
   std::string alnt = sst.str();
@@ -139,6 +102,48 @@ int Align::AlignGlobal(const char* q, int64_t ql, const char* t, int64_t tl,
 int Align::AlignLocal(const char* q, int64_t ql, const char* t, int64_t tl,
                       Penalties p) {
   return 0;
+}
+
+int Align::Traceback(std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir,
+		int32_t ql, int32_t tl, int32_t row, int32_t col) {
+	  // Traceback.
+	  std::stringstream ssq, sst, ssm;
+//	  int32_t row = ql;
+//	  int32_t col = tl;
+	  while (row > 0 && col > 0) {
+		if (dir[row][col] == 0) {
+		  ssq << q[row-1];
+		  sst << t[col-1];
+		  ssm << ((q[row-1] == t[col-1]) ? "|" : "X");
+		  row -= 1; col -= 1;
+		} else if (dir[row][col] == 2) {
+		  ssq << "-";
+		  sst << t[col-1];
+		  ssm << " ";
+		  col -= 1;
+		} else if (dir[row][col] == 1) {
+		  ssq << q[row-1];
+		  sst << "-";
+		  ssm << " ";
+		  row -= 1;
+		} else {
+		  fprintf (stderr, "ERROR: Unknown alignment move! Exiting.\n");
+		  exit(1);
+		}
+	  }
+
+	  while (row > 0) {
+		ssq << q[row-1];
+		sst << "-";
+		ssm << " ";
+		row -= 1;
+	  }
+	  while (col > 0) {
+		ssq << "-";
+		sst << t[col-1];
+		ssm << " ";
+		col -= 1;
+	  }
 }
 
 }

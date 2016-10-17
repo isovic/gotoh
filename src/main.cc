@@ -34,7 +34,8 @@ int main(int argc, char **argv) {
 //
 //  is::Align aln(query, target, is::Penalties(1, -1, -1, -1), is::kGlobal, is::GlobalMargins());
 
-//  AlignTest1();
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  AlignTest1();
+//  testing::InitGoogleTest(&argc, argv);
+//  return RUN_ALL_TESTS();
+  return 0;
 }

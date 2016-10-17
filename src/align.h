@@ -61,6 +61,8 @@ class Align {
  private:
   int AlignGlobal(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm);
   int AlignLocal(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p);
+  int Traceback(std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir,
+			int32_t ql, int32_t tl, int32_t row, int32_t col);
 
 };
 
