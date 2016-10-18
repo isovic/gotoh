@@ -21,6 +21,34 @@ typedef enum {
   kLocal
 } AlignType;
 
+
+// const int ALN_MOVE_EQ = 0;
+// const int ALN_MOVE_D = 2;
+// const int ALN_MOVE_I = 1;
+// const int ALN_MOVE_X = 3;
+
+const int32_t ALN_OP_EQ = 0;
+const int32_t ALN_OP_X = 3;
+const int32_t ALN_OP_D = 2;
+const int32_t ALN_OP_I = 1;
+const int32_t ALN_OP_S = 4;
+const int32_t ALN_OP_H = 5;
+const int32_t ALN_OP_NOP = 6;
+const char ALN_OP_TO_CHAR[] = "=IDXSH";
+const char ALN_OP_TO_BASIC_CHAR[] = "MIDMSH";
+const int8_t ALN_OP_TO_EDLIB[] = {ALN_OP_EQ, ALN_OP_I, ALN_OP_D, ALN_OP_X, ALN_OP_S, ALN_OP_H, ALN_OP_NOP};
+
+const int32_t MINUS_INF = std::numeric_limits<int32_t>::min() + 1000000; // Allow a margin to skip overflow.
+
+class CigarOp {
+public:
+  CigarOp() : op(ALN_OP_NOP), count(0) { };
+  CigarOp(int8_t _op, int32_t _count) : op(_op), count(_count) { };
+
+  int8_t op;
+  int32_t count;
+};
+
 class Penalties {
  public:
   Penalties(int32_t _match, int32_t _mismatch, int32_t _gopen, int32_t _gext)
@@ -58,11 +86,18 @@ class Align {
         AlignType aln_type, GlobalMargins gm);
   ~Align();
 
+  std::string CigarToString(const std::vector<CigarOp> &cigar);
+  std::string CigarToBasicString(const std::vector<CigarOp> &cigar);
+  void CigarToEdlibAln(const std::vector<CigarOp> &cigar, std::vector<int8_t>& alignment);
+  void CigarToAlignment(const char* q, int64_t ql, const char* t, int64_t tl,
+               const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm);
+
  private:
   int AlignGlobal(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm);
   int AlignLocal(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p);
-  int Traceback(std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir,
-			int32_t ql, int32_t tl, int32_t row, int32_t col);
+  int Traceback(const char* q, int64_t ql, const char* t, int64_t tl,
+		  std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col,
+		  std::string &alnq, std::string &alnt, std::string &alnm, std::vector<CigarOp> &cigar);
 
 };
 
