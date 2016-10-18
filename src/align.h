@@ -35,6 +35,7 @@ const int32_t ALN_OP_S = 4;
 const int32_t ALN_OP_H = 5;
 const int32_t ALN_OP_NOP = 6;
 const char ALN_OP_TO_CHAR[] = "=IDXSH";
+const char ALN_OP_TO_MATCH[] = "|  X-~";
 const char ALN_OP_TO_BASIC_CHAR[] = "MIDMSH";
 const int8_t ALN_OP_TO_EDLIB[] = {ALN_OP_EQ, ALN_OP_I, ALN_OP_D, ALN_OP_X, ALN_OP_S, ALN_OP_H, ALN_OP_NOP};
 
@@ -61,6 +62,13 @@ class Penalties {
   int32_t match, mismatch, gopen, gext;
 };
 
+// If any global margin is true, then the corresponding will be penalized.
+// Concretely, if top/left are true, then the first row/column will be initialized
+// to the multiple of the gap extend penalty in global alignment.
+// If bottom is true, the maximum of last row will be found instead of taking
+// the bottom right corner for global alignment.
+// If right is true, the maximum of last column will be found instead of taking
+// the bottom right corner for global alignment.
 class GlobalMargins {
  public:
   GlobalMargins()
@@ -86,20 +94,28 @@ class Align {
         AlignType aln_type, GlobalMargins gm);
   ~Align();
 
-  std::string CigarToString(const std::vector<CigarOp> &cigar);
-  std::string CigarToBasicString(const std::vector<CigarOp> &cigar);
-  void CigarToEdlibAln(const std::vector<CigarOp> &cigar, std::vector<int8_t>& alignment);
-  void CigarToAlignment(const char* q, int64_t ql, const char* t, int64_t tl,
-               const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm);
-
  private:
-  int AlignGlobal(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm);
-  int AlignLocal(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p);
-  int Traceback(const char* q, int64_t ql, const char* t, int64_t tl,
-		  std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col,
-		  std::string &alnq, std::string &alnt, std::string &alnm, std::vector<CigarOp> &cigar);
+  Align(const Align& op) = delete;
+  Align& operator=(const Align& op) = delete;
 
+  int AlignGlobal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm);
+  int AlignLocal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p);
+  int Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
+		  std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col, std::vector<CigarOp> &cigar);
+
+  const char* q_;
+  int64_t ql_;
+  const char* t_;
+  int64_t tl_;
+  Penalties p_;
+  GlobalMargins gm_;
 };
+
+std::string CigarToString(const std::vector<CigarOp> &cigar);
+std::string CigarToBasicString(const std::vector<CigarOp> &cigar);
+void CigarToEdlibAln(const std::vector<CigarOp> &cigar, std::vector<int8_t>& alignment);
+void CigarToAlignment(const char* q, int64_t ql, const char* t, int64_t tl,
+             const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm);
 
 }
 
