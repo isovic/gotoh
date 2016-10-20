@@ -34,6 +34,7 @@ const int32_t ALN_OP_I = 1;
 const int32_t ALN_OP_S = 4;
 const int32_t ALN_OP_H = 5;
 const int32_t ALN_OP_NOP = 6;
+const int32_t ALN_OP_M = 7;
 const char ALN_OP_TO_CHAR[] = "=IDXSH";
 const char ALN_OP_TO_MATCH[] = "|  X-~";
 const char ALN_OP_TO_BASIC_CHAR[] = "MIDMSH";
@@ -65,9 +66,9 @@ class Penalties {
 // If any global margin is true, then the corresponding will be penalized.
 // Concretely, if top/left are true, then the first row/column will be initialized
 // to the multiple of the gap extend penalty in global alignment.
-// If bottom is true, the maximum of last row will be found instead of taking
+// If bottom is false, the maximum of last row will be found instead of taking
 // the bottom right corner for global alignment.
-// If right is true, the maximum of last column will be found instead of taking
+// If right is false, the maximum of last column will be found instead of taking
 // the bottom right corner for global alignment.
 class GlobalMargins {
  public:
@@ -101,7 +102,7 @@ class Align {
   int AlignGlobal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm);
   int AlignLocal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p);
   int Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
-		  std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col, std::vector<CigarOp> &cigar);
+		  std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col, std::vector<CigarOp> &cigar);
 
   const char* q_;
   int64_t ql_;

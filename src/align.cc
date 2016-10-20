@@ -43,20 +43,17 @@ void PrintMatrix(std::vector<std::vector<T> > m) {
 int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl,
                        Penalties p, GlobalMargins gm) {
 
-  std::vector<std::vector<int32_t> > M(ql+1, std::vector<int32_t>(tl+1, 0));
-  std::vector<std::vector<int32_t> > dir(ql+1, std::vector<int32_t>(tl+1, 0));
+  // std::vector<std::vector<int32_t> > M(ql+1, std::vector<int32_t>(tl+1, 0));
+  std::vector<std::vector<int32_t> > M(2, std::vector<int32_t>(tl+1, 0));
   std::vector<std::vector<int32_t> > V(2, std::vector<int32_t>(tl+1, 0));
   std::vector<int32_t> H(tl+1, 0);
+  std::vector<std::vector<int32_t> > dir(ql+1, std::vector<int32_t>(tl+1, 0));
 
   int32_t w[] = {p.match, p.mismatch};    // Match score and mismatch penalty, for easier lookup using a profile.
   int32_t w_op[] = {ALN_OP_EQ, ALN_OP_X}; // Operation lookup (for profile).
 
 
 
-  // Penalize the first column.
-  if (gm.left) {
-    for (int32_t i=0; i<(ql+1); i++) { M[i][0] = i * p.gext; }
-  }
   // Penalize the first row.
   if (gm.top) {
     for (int32_t i=0; i<(tl+1); i++) {
@@ -65,30 +62,31 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl,
     }
   }
 
-  std::abs(-5);
-
   for (int32_t i=1; i<(ql+1); i++) {
     if (gm.top) { H[0] = MINUS_INF; }
+    // Penalize the first column.
+    if (gm.left) {	M[1][0] = i * p.gext; }
 
     for (int32_t j=1; j<(tl+1); j++) {
-      V[1][j] = std::max((V[0][j] + p.gext), M[i-1][j] + p.gopen);
-      H[j] = std::max(H[j-1] + p.gext, M[i][j-1] + p.gopen);
+      V[1][j] = std::max((V[0][j] + p.gext), M[0][j] + p.gopen);
+      H[j] = std::max(H[j-1] + p.gext, M[1][j-1] + p.gopen);
 
-      int32_t diag = M[i-1][j-1] + ((q[i-1] == t[j-1]) ? p.match : p.mismatch);
-      dir[i][j] = (q[i-1] == t[j-1]) ? ALN_OP_EQ : ALN_OP_X;  // Match/Mismatch.
-      M[i][j] = diag;
-      if (V[1][j] > M[i][j]) { M[i][j] = V[1][j]; dir[i][j] = ALN_OP_I; }  // Insertion.
-      if (H[j] > M[i][j]) { M[i][j] = H[j]; dir[i][j] = ALN_OP_D; }  // Deletion.
+      int32_t diag = M[0][j-1] + ((q[i-1] == t[j-1]) ? p.match : p.mismatch);
+      dir[i][j] = ALN_OP_M;  // Match/Mismatch. Needs to be replaced in the traceback by a correct op (faster this way).
+      M[1][j] = diag;
+      if (V[1][j] > M[1][j]) { M[1][j] = V[1][j]; dir[i][j] = ALN_OP_I; }  // Insertion.
+      if (H[j] > M[1][j]) { M[1][j] = H[j]; dir[i][j] = ALN_OP_D; }  // Deletion.
     }
     V[0] = V[1];
+    M[0] = M[1];
   }
 
   int32_t bt_row = ql;  // Backtrace start column.
   int32_t bt_col = tl;  // Backtrace start row.
-  int32_t bt_val = M[ql][tl]; // Value of M at the bt coordinates.
+  int32_t bt_val = M[1][tl]; // Value of M at the bt coordinates.
 
   // Handle semiglobal right margin.
-  if (gm.right) {
+  if (!gm.right) {
     for (int32_t i=0; i<(ql+1); i++) {
       if (M[i][tl] > bt_val) {
         bt_row = i;
@@ -98,7 +96,7 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl,
   }
 
   // Handle semiglobal bottom margin.
-  if (gm.bottom) {
+  if (!gm.bottom) {
     for (int32_t i=0; i<(tl+1); i++) {
       if (M[ql][i] > bt_val) {
         bt_col = i;
@@ -109,7 +107,7 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl,
 
   // Perform traceback.
   std::vector<is::CigarOp> cigar;
-  Traceback_(q, ql, t, tl, M, dir, bt_row, bt_col, cigar);
+  Traceback_(q, ql, t, tl, dir, bt_row, bt_col, cigar);
 
   // Debug output and conversion.
   std::string alnq, alnt, alnm;
@@ -129,32 +127,41 @@ int Align::AlignLocal_(const char* q, int64_t ql, const char* t, int64_t tl,
 }
 
 int Align::Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
-		std::vector<std::vector<int32_t> > &M, std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col, std::vector<is::CigarOp> &cigar) {
+					  std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col, std::vector<is::CigarOp> &cigar) {
 
-	  cigar.clear();
-	  cigar.reserve((int32_t) sqrt(row*row + col*col));	// An approximation, to save from reallocating every move.
+	cigar.clear();
+	cigar.reserve((int32_t) sqrt(row*row + col*col));	// An approximation, to save from reallocating every move.
 
-	  if ((ql - row) > 0) { cigar.push_back(is::CigarOp(ALN_OP_I, (ql - row))); }
-	  if ((tl - col) > 0) { cigar.push_back(is::CigarOp(ALN_OP_D, (tl - col))); }
+	if ((ql - row) > 0) { cigar.push_back(is::CigarOp(ALN_OP_I, (ql - row))); }
+	if ((tl - col) > 0) { cigar.push_back(is::CigarOp(ALN_OP_D, (tl - col))); }
 
-	  is::CigarOp cigarop(dir[row][col], 0);
+  	int8_t op = dir[row][col];
+	if (op == ALN_OP_M || op == ALN_OP_EQ || op == ALN_OP_X) {
+		op = (q[row-1] == t[col-1]) ? ALN_OP_EQ : ALN_OP_X;
+	}
+	  is::CigarOp cigarop(op, 0);
 
 	  while (row > 0 && col > 0) {
-		  if (dir[row][col] == cigarop.op) {
-			  cigarop.count += 1;
-		  } else {
-		  	cigar.push_back(cigarop);
-		  	cigarop.op = dir[row][col];
-		  	cigarop.count = 1;
-		  }
+	  	op = dir[row][col];
+		if (op == ALN_OP_M || op == ALN_OP_EQ || op == ALN_OP_X) {
+			op = (q[row-1] == t[col-1]) ? ALN_OP_EQ : ALN_OP_X;
+		}
 
-		  if (dir[row][col] == ALN_OP_EQ || dir[row][col] == ALN_OP_X) {
-		    row -= 1; col -= 1;
-		  } else if (dir[row][col] == ALN_OP_I || dir[row][col] == ALN_OP_S) {
-		    row -= 1;
-      } else if (dir[row][col] == ALN_OP_D) {
-        col -= 1;
-		  }
+		if (op == cigarop.op) {
+		  cigarop.count += 1;
+		} else {
+			cigar.push_back(cigarop);
+			cigarop.op = op;
+			cigarop.count = 1;
+		}
+
+		if (op == ALN_OP_EQ || op == ALN_OP_X) {
+			row -= 1; col -= 1;
+		} else if (op == ALN_OP_I || op == ALN_OP_S) {
+			row -= 1;
+		} else if (op == ALN_OP_D) {
+			col -= 1;
+		}
 	  }
 
 	  if (cigarop.count > 0) {
