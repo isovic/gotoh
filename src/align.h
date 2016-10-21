@@ -27,14 +27,14 @@ typedef enum {
 // const int ALN_MOVE_I = 1;
 // const int ALN_MOVE_X = 3;
 
-const int32_t ALN_OP_EQ = 0;
-const int32_t ALN_OP_X = 3;
-const int32_t ALN_OP_D = 2;
-const int32_t ALN_OP_I = 1;
-const int32_t ALN_OP_S = 4;
-const int32_t ALN_OP_H = 5;
-const int32_t ALN_OP_NOP = 6;
-const int32_t ALN_OP_M = 7;
+const int8_t ALN_OP_EQ = 0;
+const int8_t ALN_OP_X = 3;
+const int8_t ALN_OP_D = 2;
+const int8_t ALN_OP_I = 1;
+const int8_t ALN_OP_S = 4;
+const int8_t ALN_OP_H = 5;
+const int8_t ALN_OP_NOP = 6;
+const int8_t ALN_OP_M = 7;
 const char ALN_OP_TO_CHAR[] = "=IDXSH";
 const char ALN_OP_TO_MATCH[] = "|  X-~";
 const char ALN_OP_TO_BASIC_CHAR[] = "MIDMSH";
@@ -95,21 +95,26 @@ class Align {
         AlignType aln_type, GlobalMargins gm);
   ~Align();
 
+  int GetAlignment(int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end, std::vector<CigarOp> &cigar);
+  // int GetCigar(std::vector<CigarOp> &cigar);
+  // int GetCigarAsString(std::string &cigar_string);
+  void FormatAlignment(const std::string &q, const std::string &t, std::string &alnq, std::string &alnt, std::string &alnm);
+  void Verbose(const std::string &q, const std::string &t, std::ostream &os);
+
  private:
   Align(const Align& op) = delete;
   Align& operator=(const Align& op) = delete;
 
-  int AlignGlobal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm);
+  int AlignGlobal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm,
+                   int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end , std::vector<is::CigarOp> &cigar);
   int AlignLocal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p);
   int Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
 		  std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col, std::vector<CigarOp> &cigar);
 
-  const char* q_;
-  int64_t ql_;
-  const char* t_;
-  int64_t tl_;
   Penalties p_;
   GlobalMargins gm_;
+  std::vector<is::CigarOp> cigar_;
+  int32_t q_start_, q_end_, t_start_, t_end_;
 };
 
 std::string CigarToString(const std::vector<CigarOp> &cigar);
