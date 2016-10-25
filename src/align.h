@@ -100,7 +100,7 @@ class Align {
   // int GetCigarAsString(std::string &cigar_string);
   void FormatAlignment(const std::string &q, const std::string &t, std::string &alnq, std::string &alnt, std::string &alnm);
   void Verbose(const std::string &q, const std::string &t, std::ostream &os);
-
+  
  private:
   Align(const Align& op) = delete;
   Align& operator=(const Align& op) = delete;
@@ -120,8 +120,9 @@ class Align {
 std::string CigarToString(const std::vector<CigarOp> &cigar);
 std::string CigarToBasicString(const std::vector<CigarOp> &cigar);
 void CigarToEdlibAln(const std::vector<CigarOp> &cigar, std::vector<int8_t>& alignment);
-void CigarToAlignment(const char* q, int64_t ql, const char* t, int64_t tl,
-             const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm);
+void CigarToAlignment(const char* q, int64_t ql, int64_t q_start, int64_t q_end,
+            const char* t, int64_t tl, int64_t t_start, int64_t t_end,
+            const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm);
 
 }
 

@@ -41,13 +41,13 @@ int Align::GetAlignment(int32_t &q_start, int32_t &q_end, int32_t &t_start, int3
 }
 
 void Align::FormatAlignment(const std::string &q, const std::string &t, std::string &alnq, std::string &alnt, std::string &alnm) {
-	CigarToAlignment(q.c_str(), q.size(), t.c_str(), t.size(), cigar_, alnq, alnt, alnm);
+	CigarToAlignment(q.c_str(), q.size(), q_start_, q_end_, t.c_str(), t.size(), t_start_, t_end_, cigar_, alnq, alnt, alnm);
 }
 
 void Align::Verbose(const std::string &q, const std::string &t, std::ostream &os) {
   // Debug output and conversion.
   std::string alnq, alnt, alnm;
-  CigarToAlignment(q.c_str(), q.size(), t.c_str(), t.size(), cigar_, alnq, alnt, alnm);
+  CigarToAlignment(q.c_str(), q.size(), q_start_, q_end_, t.c_str(), t.size(), t_start_, t_end_, cigar_, alnq, alnt, alnm);
   os << alnt << std::endl;
   os << alnm << std::endl;
   os << alnq << std::endl;
@@ -138,37 +138,6 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl, Pe
   // Perform traceback.
   Traceback_(q, ql, t, tl, dir, bt_row, bt_col, cigar);
 
-  // q_start_ = 0;
-  // q_end_ = ql;
-  // t_start_ = 0;
-  // t_end_= tl;
-
-  // int32_t cigar_start = 0;
-  // while (cigar_start < cigar.size()) {
-  // 	if (cigar[cigar_start].op != ALN_OP_I && cigar[cigar_start].op != ALN_OP_D && cigar[cigar_start].op != ALN_OP_S) {
-  // 		break;
-  // 	}
-  // 	if (cigar[cigar_start].op == ALN_OP_I || cigar[cigar_start].op == ALN_OP_S) {
-  // 		q_start_ += cigar[cigar_start].count;
-  // 	} else if (cigar[cigar_start].op == ALN_OP_D) {
-  // 		t_start_ += cigar[cigar_start].count;
-  // 	}
-  // 	cigar_start += 1;
-  // }
-
-  // int32_t cigar_end = cigar.size();
-  // while (cigar_end >= 0) {
-  // 	if (cigar[cigar_end].op != ALN_OP_I && cigar[cigar_end].op != ALN_OP_D && cigar[cigar_end].op != ALN_OP_S) {
-  // 		break;
-  // 	}
-  // 	if (cigar[cigar_end].op == ALN_OP_I || cigar[cigar_end].op == ALN_OP_S) {
-  // 		q_end_ -= cigar[cigar_end].count;
-  // 	} else if (cigar[cigar_end].op == ALN_OP_D) {
-  // 		t_end_ -= cigar[cigar_end].count;
-  // 	}
-  // 	cigar_end -= 1;
-  // }
-
   return 0;
 }
 
@@ -188,8 +157,10 @@ int Align::Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
 	t_start_ = 0;
 	t_end_= tl;
 
-	if ((ql - row) > 0) { cigar.push_back(is::CigarOp(ALN_OP_I, (ql - row))); q_end_ = (ql - row); }
-	if ((tl - col) > 0) { cigar.push_back(is::CigarOp(ALN_OP_D, (tl - col))); t_end_ = (tl - col); }
+	// if ((ql - row) > 0) { cigar.push_back(is::CigarOp(ALN_OP_I, (ql - row))); q_end_ = (ql - row); }
+	// if ((tl - col) > 0) { cigar.push_back(is::CigarOp(ALN_OP_D, (tl - col))); t_end_ = (tl - col); }
+	if ((ql - row) > 0) { q_end_ = (ql - row); }
+	if ((tl - col) > 0) { t_end_ = (tl - col); }
 
   	int8_t op = dir[row][col];
 	if (op == ALN_OP_M || op == ALN_OP_EQ || op == ALN_OP_X) {
@@ -224,8 +195,10 @@ int Align::Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
 	  	cigar.push_back(cigarop);
 	  }
 
-	  if (row > 0) { cigar.push_back(CigarOp(ALN_OP_I, row)); q_start_ = row; }
-	  if (col > 0) { cigar.push_back(CigarOp(ALN_OP_D, col)); t_start_ = col; }
+	  // if (row > 0) { cigar.push_back(CigarOp(ALN_OP_I, row)); q_start_ = row; }
+	  // if (col > 0) { cigar.push_back(CigarOp(ALN_OP_D, col)); t_start_ = col; }
+	  if (row > 0) { q_start_ = row; }
+	  if (col > 0) { t_start_ = col; }
 
 	  std::reverse(cigar.begin(), cigar.end());
 
@@ -272,11 +245,18 @@ void CigarToEdlibAln(const std::vector<CigarOp> &cigar, std::vector<int8_t>& ali
 	}
 }
 
-void CigarToAlignment(const char* q, int64_t ql, const char* t, int64_t tl,
-							 const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm) {
+void CigarToAlignment(const char* q, int64_t ql, int64_t q_start, int64_t q_end,
+					  const char* t, int64_t tl, int64_t t_start, int64_t t_end,
+					  const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm) {
 	std::stringstream ssq, sst, ssm;
 
 	int32_t posq = 0, post = 0;
+
+	// if (q_start_ > 0) {
+	// }
+
+	posq = q_start;
+	post = t_start;
 
 	for (int32_t i=0; i<cigar.size(); i++) {
 		if (cigar[i].op == ALN_OP_EQ || cigar[i].op == ALN_OP_X) {
