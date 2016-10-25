@@ -8,6 +8,7 @@
 #ifndef SRC_ALIGN_TEST_H_
 #define SRC_ALIGN_TEST_H_
 
-void AlignTest1();
+void AlignTestGlobal1();
+void AlignTestLocal1();
 
 #endif /* SRC_ALIGN_TEST_H_ */

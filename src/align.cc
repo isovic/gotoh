@@ -19,24 +19,26 @@ Align::Align(const std::string& q, const std::string& t, Penalties p,
 
 Align::Align(const char* q, int64_t ql, const char* t, int64_t tl, Penalties p,
              AlignType aln_type, GlobalMargins gm) :  p_(p), gm_(gm),
-		     q_start_(0), q_end_(0), t_start_(0), t_end_(0), aln_type_(aln_type)  {
-  if (aln_type == kGlobal) {
-    AlignGlobal_(q, ql, t, tl, p, gm, q_start_, q_end_, t_start_, t_end_, cigar_);
-  } else if (aln_type == kLocal) {
-    AlignLocal_(q, ql, t, tl, p);
-  }
+		     q_start_(0), q_end_(0), t_start_(0), t_end_(0), aln_type_(aln_type), score_(0)  {
+  Align_(q, ql, t, tl, p, gm, aln_type, q_start_, q_end_, t_start_, t_end_, score_, cigar_);
+//  if (aln_type == kGlobal) {
+//    AlignGlobal_(q, ql, t, tl, p, gm, q_start_, q_end_, t_start_, t_end_, cigar_);
+//  } else if (aln_type == kLocal) {
+//    AlignLocal_(q, ql, t, tl, p);
+//  }
 }
 
 Align::~Align() {
 
 }
 
-int Align::GetAlignment(int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end, std::vector<CigarOp> &cigar) {
+int Align::GetAlignment(int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end, int32_t &score, std::vector<CigarOp> &cigar) {
 	cigar = cigar_;
 	q_start = q_start_;
 	q_end = q_end_;
 	t_start = t_start_;
 	t_end = t_end_;
+	score = score_;
 	return 0;
 }
 
@@ -55,6 +57,7 @@ void Align::Verbose(const std::string &q, const std::string &t, std::ostream &os
   os << CigarToBasicString(cigar_) << std::endl;
   os << "q = [" << q_start_ << ", " << q_end_ << "]" << std::endl;
   os << "t = [" << t_start_ << ", " << t_end_ << "]" << std::endl;
+  os << "score = " << score_ << std::endl;
 }
 
 template <class T>
@@ -67,8 +70,8 @@ void PrintMatrix(std::vector<std::vector<T> > m) {
   }
 }
 
-int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl, Penalties p, GlobalMargins gm,
-                       int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end , std::vector<is::CigarOp> &cigar) {
+int Align::Align_(const char* q, int64_t ql, const char* t, int64_t tl, Penalties p, GlobalMargins gm, AlignType aln_type,
+                       int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end, int32_t &score, std::vector<is::CigarOp> &cigar) {
 
   // Storing only two lines for the main (M) and the vertical matrix (V).
   std::vector<std::vector<int32_t> > M(2, std::vector<int32_t>(tl+1, 0));
@@ -81,20 +84,23 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl, Pe
   int32_t w[] = {p.match, p.mismatch};    // Match score and mismatch penalty, for easier lookup using a profile.
   int32_t w_op[] = {ALN_OP_EQ, ALN_OP_X}; // Operation lookup (for profile).
 
-
-
   // Penalize the first row.
-  if (gm.top) {
+  if (aln_type == kGlobal && gm.top) {
     for (int32_t i=0; i<(tl+1); i++) {
       M[0][i] = i * p.gext;
       V[0][i] = MINUS_INF;
     }
   }
 
+  // Variables for tracking the maximum (for SW).
+  int32_t bt_row = 0;  // Backtrace start column.
+  int32_t bt_col = 0;  // Backtrace start row.
+  int32_t bt_val = 0;  // Value of M at the bt coordinates.
+
   for (int32_t i=1; i<(ql+1); i++) {
-    if (gm.top) { H[0] = MINUS_INF; }
+    if (aln_type == kGlobal && gm.top) { H[0] = MINUS_INF; }
     // Penalize the first column.
-    if (gm.left) {	M[1][0] = i * p.gext; }
+    if (aln_type == kGlobal && gm.left) {	M[1][0] = i * p.gext; }
 
     for (int32_t j=1; j<(tl+1); j++) {
       V[1][j] = std::max((V[0][j] + p.gext), M[0][j] + p.gopen);
@@ -105,18 +111,26 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl, Pe
       M[1][j] = diag;
       if (V[1][j] > M[1][j]) { M[1][j] = V[1][j]; dir[i][j] = ALN_OP_I; }  // Insertion.
       if (H[1] > M[1][j]) { M[1][j] = H[1]; dir[i][j] = ALN_OP_D; }  // Deletion.
+
+      // Local alignment - reset scores smaller than 0.
+      if (aln_type == kLocal && M[1][j] < 0) { M[1][j] = 0; }
+      // Local alignment - find maximum.
+      if (M[1][j] > bt_val) { bt_val = M[1][j]; bt_row = i; bt_col = j; }
     }
     V[0] = V[1];
     M[0] = M[1];
     H[0] = H[1];
   }
 
-  int32_t bt_row = ql;  // Backtrace start column.
-  int32_t bt_col = tl;  // Backtrace start row.
-  int32_t bt_val = M[1][tl]; // Value of M at the bt coordinates.
+  // General case for global alignment. Start from the bottom right corner.
+  if (aln_type == kGlobal) {
+    bt_row = ql;
+    bt_col = tl;
+    bt_val = M[1][tl];
+  }
 
-  // Handle semiglobal right margin.
-  if (!gm.right) {
+  // Handle semiglobal right margin. Allow the start position at any row of the last column.
+  if (aln_type == kGlobal && !gm.right) {
     for (int32_t i=0; i<(ql+1); i++) {
       if (M[i][tl] > bt_val) {
         bt_row = i;
@@ -125,8 +139,8 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl, Pe
     }
   }
 
-  // Handle semiglobal bottom margin.
-  if (!gm.bottom) {
+  // Handle semiglobal bottom margin. Allow the start position at any column of the last row.
+  if (aln_type == kGlobal && !gm.bottom) {
     for (int32_t i=0; i<(tl+1); i++) {
       if (M[ql][i] > bt_val) {
         bt_col = i;
@@ -135,9 +149,16 @@ int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl, Pe
     }
   }
 
+  score = bt_val;
+
   // Perform traceback.
   Traceback_(q, ql, t, tl, dir, bt_row, bt_col, cigar);
 
+  return 0;
+}
+
+int Align::AlignGlobal_(const char* q, int64_t ql, const char* t, int64_t tl, Penalties p, GlobalMargins gm,
+                       int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end, int32_t &score, std::vector<is::CigarOp> &cigar) {
   return 0;
 }
 

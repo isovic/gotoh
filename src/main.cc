@@ -33,8 +33,12 @@ int main(int argc, char **argv) {
 //  printf ("Aligning:\n  query: '%s'\n  target: '%s'\n", query.c_str(), target.c_str());
 //
 //  is::Align aln(query, target, is::Penalties(1, -1, -1, -1), is::kGlobal, is::GlobalMargins());
+  AlignTestGlobal1();
 
-  AlignTest1();
+  printf ("-------------------\n");
+  printf ("Testing local alignment:\n");
+  AlignTestLocal1();
+
 //  testing::InitGoogleTest(&argc, argv);
 //  return RUN_ALL_TESTS();
   return 0;
