@@ -19,7 +19,7 @@ Align::Align(const std::string& q, const std::string& t, Penalties p,
 
 Align::Align(const char* q, int64_t ql, const char* t, int64_t tl, Penalties p,
              AlignType aln_type, GlobalMargins gm) :  p_(p), gm_(gm),
-		     q_start_(0), q_end_(0), t_start_(0), t_end_(0)  {
+		     q_start_(0), q_end_(0), t_start_(0), t_end_(0), aln_type_(aln_type)  {
   if (aln_type == kGlobal) {
     AlignGlobal_(q, ql, t, tl, p, gm, q_start_, q_end_, t_start_, t_end_, cigar_);
   } else if (aln_type == kLocal) {
@@ -41,13 +41,13 @@ int Align::GetAlignment(int32_t &q_start, int32_t &q_end, int32_t &t_start, int3
 }
 
 void Align::FormatAlignment(const std::string &q, const std::string &t, std::string &alnq, std::string &alnt, std::string &alnm) {
-	CigarToAlignment(q.c_str(), q.size(), q_start_, q_end_, t.c_str(), t.size(), t_start_, t_end_, cigar_, alnq, alnt, alnm);
+	CigarToAlignment(q.c_str(), q.size(), q_start_, q_end_, t.c_str(), t.size(), t_start_, t_end_, aln_type_, cigar_, alnq, alnt, alnm);
 }
 
 void Align::Verbose(const std::string &q, const std::string &t, std::ostream &os) {
   // Debug output and conversion.
   std::string alnq, alnt, alnm;
-  CigarToAlignment(q.c_str(), q.size(), q_start_, q_end_, t.c_str(), t.size(), t_start_, t_end_, cigar_, alnq, alnt, alnm);
+  CigarToAlignment(q.c_str(), q.size(), q_start_, q_end_, t.c_str(), t.size(), t_start_, t_end_, aln_type_, cigar_, alnq, alnt, alnm);
   os << alnt << std::endl;
   os << alnm << std::endl;
   os << alnq << std::endl;
@@ -246,17 +246,22 @@ void CigarToEdlibAln(const std::vector<CigarOp> &cigar, std::vector<int8_t>& ali
 }
 
 void CigarToAlignment(const char* q, int64_t ql, int64_t q_start, int64_t q_end,
-					  const char* t, int64_t tl, int64_t t_start, int64_t t_end,
+					  const char* t, int64_t tl, int64_t t_start, int64_t t_end, AlignType aln_type,
 					  const std::vector<CigarOp> &cigar, std::string &alnq, std::string &alnt, std::string &alnm) {
 	std::stringstream ssq, sst, ssm;
 
 	int32_t posq = 0, post = 0;
 
-	// if (q_start_ > 0) {
-	// }
-
-	posq = q_start;
-	post = t_start;
+  if (aln_type == kGlobal) {
+    for (int32_t i=0; i<t_start; i++) {
+      ssq << "-"; sst << t[post++]; ssm << " ";
+    }
+    for (int32_t i=0; i<q_start; i++) {
+      ssq << q[posq++]; sst << "-"; ssm << " ";
+    }
+  }
+  posq = q_start;
+  post = t_start;
 
 	for (int32_t i=0; i<cigar.size(); i++) {
 		if (cigar[i].op == ALN_OP_EQ || cigar[i].op == ALN_OP_X) {
@@ -281,6 +286,15 @@ void CigarToAlignment(const char* q, int64_t ql, int64_t q_start, int64_t q_end,
 		}
 
 	}
+
+  if (aln_type == kGlobal) {
+    for (; post < tl; post++) {
+      ssq << "-"; sst << t[post]; ssm << " ";
+    }
+    for (; posq < ql; posq++) {
+      ssq << q[posq]; sst << "-"; ssm << " ";
+    }
+  }
 
 	alnq = ssq.str();
 	alnt = sst.str();
