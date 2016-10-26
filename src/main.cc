@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <iostream>
 #include <string>
-#include "../lib/gtest/gtest.h"
 #include "align.h"
 #include "align_test.h"
 using namespace std;

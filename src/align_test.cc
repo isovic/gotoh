@@ -8,7 +8,7 @@
 #include "align.h"
 #include <iostream>
 #include <string>
-#include "../lib/gtest/gtest.h"
+//#include "../lib/gtest/gtest.h"
 
 // TEST(AlignTest1, BasicTest1) {
 void AlignTestGlobal1() {

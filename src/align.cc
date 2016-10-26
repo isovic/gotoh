@@ -18,8 +18,8 @@ Align::Align(const std::string& q, const std::string& t, Penalties p,
 }
 
 Align::Align(const char* q, int64_t ql, const char* t, int64_t tl, Penalties p,
-             AlignType aln_type, GlobalMargins gm) :  p_(p), gm_(gm),
-		     q_start_(0), q_end_(0), t_start_(0), t_end_(0), aln_type_(aln_type), score_(0)  {
+             AlignType aln_type, GlobalMargins gm) :  p_(p), gm_(gm), aln_type_(aln_type),
+		     q_start_(0), q_end_(0), t_start_(0), t_end_(0), score_(0)  {
   Align_(q, ql, t, tl, p, gm, aln_type, q_start_, q_end_, t_start_, t_end_, score_, cigar_);
 //  if (aln_type == kGlobal) {
 //    AlignGlobal_(q, ql, t, tl, p, gm, q_start_, q_end_, t_start_, t_end_, cigar_);
@@ -81,8 +81,8 @@ int Align::Align_(const char* q, int64_t ql, const char* t, int64_t tl, Penaltie
   // The direction backtrack matrix is stored entirely.
   std::vector<std::vector<int32_t> > dir(ql+1, std::vector<int32_t>(tl+1, 0));
 
-  int32_t w[] = {p.match, p.mismatch};    // Match score and mismatch penalty, for easier lookup using a profile.
-  int32_t w_op[] = {ALN_OP_EQ, ALN_OP_X}; // Operation lookup (for profile).
+//  int32_t w[] = {p.match, p.mismatch};    // Match score and mismatch penalty, for easier lookup using a profile.
+//  int32_t w_op[] = {ALN_OP_EQ, ALN_OP_X}; // Operation lookup (for profile).
 
   // Penalize the first row.
   if (aln_type == kGlobal && gm.top) {
@@ -228,7 +228,7 @@ int Align::Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
 
 std::string CigarToString(const std::vector<CigarOp> &cigar) {
 	std::stringstream ss;
-	for (int32_t i=0; i<cigar.size(); i++) {
+	for (uint32_t i=0; i<cigar.size(); i++) {
 		ss << cigar[i].count << ALN_OP_TO_CHAR[cigar[i].op]	;
 	}
 	return ss.str();
@@ -239,7 +239,7 @@ std::string CigarToBasicString(const std::vector<CigarOp> &cigar) {
 	std::vector<CigarOp> cigar_basic(cigar);
 
 	int32_t offset = 0;
-	for (int32_t i=1; i<cigar_basic.size(); i++) {
+	for (int32_t i=1; i<(int32_t) cigar_basic.size(); i++) {
 		if (ALN_OP_TO_BASIC_CHAR[cigar_basic[i].op] == ALN_OP_TO_BASIC_CHAR[cigar_basic[i-offset-1].op]) {
 			cigar_basic[i-offset-1].count += cigar_basic[i].count;
 			offset += 1;
@@ -247,7 +247,7 @@ std::string CigarToBasicString(const std::vector<CigarOp> &cigar) {
 		}
 		cigar_basic[i-offset] = cigar_basic[i];
 	}
-	for (int32_t i=0; i<(cigar_basic.size()-offset); i++) {
+	for (int32_t i=0; i<(((int32_t) cigar_basic.size())-offset); i++) {
 		ss << cigar_basic[i].count << ALN_OP_TO_BASIC_CHAR[cigar_basic[i].op]	;
 	}
 	return ss.str();
@@ -256,11 +256,11 @@ std::string CigarToBasicString(const std::vector<CigarOp> &cigar) {
 void CigarToEdlibAln(const std::vector<CigarOp> &cigar, std::vector<int8_t>& alignment) {
 	alignment.clear();
 	int32_t aln_len = 0;
-	for (int32_t i=0; i<cigar.size(); i++) {
+	for (uint32_t i=0; i<cigar.size(); i++) {
 		aln_len += cigar[i].count;
 	}
 	alignment.reserve(aln_len);
-	for (int32_t i=0; i<cigar.size(); i++) {
+	for (uint32_t i=0; i<cigar.size(); i++) {
 		std::vector<int8_t> temp(cigar[i].count, ALN_OP_TO_EDLIB[cigar[i].op]);
 		alignment.insert(alignment.end(), temp.begin(), temp.end());
 	}
@@ -284,7 +284,7 @@ void CigarToAlignment(const char* q, int64_t ql, int64_t q_start, int64_t q_end,
   posq = q_start;
   post = t_start;
 
-	for (int32_t i=0; i<cigar.size(); i++) {
+	for (uint32_t i=0; i<cigar.size(); i++) {
 		if (cigar[i].op == ALN_OP_EQ || cigar[i].op == ALN_OP_X) {
 			for (int32_t j=0; j<cigar[i].count; j++) {
 				ssq << q[posq++];	sst << t[post++];	ssm << ALN_OP_TO_MATCH[cigar[i].op];

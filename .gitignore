@@ -1,10 +1,8 @@
 test-out/
-obj_linux/
-obj/
+obj*/
 bin/
 tools/
 temp*/
-obj_debug/
 .cproject
 .project
 .settings/
