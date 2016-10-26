@@ -15,3 +15,8 @@ results/
 *.tee
 *.memtime
 comparison*.sh
+lib/googletest
+!lib/googletest/src
+!lib/googletest/include
+!lib/googletest/Makefile
+!lib/googletest/LICENSE
