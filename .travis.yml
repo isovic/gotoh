@@ -3,4 +3,12 @@ branches:
   only:
    - master
 
-script: make test
+script:
+  - make test
+  - gcc --version
+
+addons:
+  apt:
+    packages:
+      - gcc-5
+      - g++-5
