@@ -15,6 +15,7 @@ install:
 
 script:
   - make test
+  - bin/gotoh_test
 
 # addons:
 #   apt:
