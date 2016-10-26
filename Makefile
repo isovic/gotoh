@@ -1,4 +1,5 @@
-GCC = g++
+# GCC = g++
+GCC = $(CXX)
 
 BIN = bin/gotoh
 
@@ -66,12 +67,12 @@ TEST_MACROS = -DRUN_ALL_TESTS_
 test: $(OBJ_FILES_TEST)
 	@echo [LD TESTS] $<
 	@mkdir -p $(dir $(BIN_TEST))
-	$(GCC) $(LD_FLAGS) $(LIB_DIRS) $(TEST_MACROS) -o $(BIN_TEST) $(OBJ_FILES_TEST) $(LD_LIBS)
+	@$(GCC) $(LD_FLAGS) $(LIB_DIRS) $(TEST_MACROS) -o $(BIN_TEST) $(OBJ_FILES_TEST) $(LD_LIBS)
 
 $(OBJ_TEST_DIR)/%.o: %.cc $(TEST_H_FILES)
 	@echo [CP TESTS] $<
 	@mkdir -p $(dir $@)
-	$(GCC) $(CC_LIBS) $(INCLUDE) $(INCLUDE_GTEST) $(CC_FLAGS_DEBUG) $(TEST_MACROS) -o $@ $<
+	@$(GCC) $(CC_LIBS) $(INCLUDE) $(INCLUDE_GTEST) $(CC_FLAGS_DEBUG) $(TEST_MACROS) -o $@ $<
 
 $(GTEST_DIR)/build/gtest.a:
 	cd $(GTEST_DIR); make
