@@ -55,7 +55,7 @@ BIN_TEST = $(BIN)_test
 GTEST_DIR = lib/googletest
 INCLUDE_GTEST = -I$(GTEST_DIR)/include -Itest/
 
-TEST_SOURCE_DIR = test
+TEST_SOURCE_DIR = test_src
 OBJ_TEST_DIR = obj_test
 # Remove the main source file from the SOURCE_DIR
 TEST_CC_FILES :=  $(wildcard $(TEST_SOURCE_DIR)/*.cc) $(filter-out $(SOURCE_DIR)/main.cc, $(CC_FILES))
@@ -63,7 +63,7 @@ TEST_H_FILES := $(wildcard $(TEST_SOURCE_DIR)/*.h) $(wildcard $(TEST_SOURCE_DIR)
 OBJ_FILES_TEST := $(addprefix $(OBJ_TEST_DIR)/,$(TEST_CC_FILES:.cc=.o)) $(GTEST_DIR)/build/gtest.a
 TEST_MACROS = -DRUN_ALL_TESTS_
 
-tests: $(OBJ_FILES_TEST)
+test: $(OBJ_FILES_TEST)
 	@echo [LD TESTS] $<
 	@mkdir -p $(dir $(BIN_TEST))
 	$(GCC) $(LD_FLAGS) $(LIB_DIRS) $(TEST_MACROS) -o $(BIN_TEST) $(OBJ_FILES_TEST) $(LD_LIBS)
