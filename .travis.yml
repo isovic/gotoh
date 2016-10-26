@@ -1,2 +1,6 @@
 language: cpp
-script: make tests
+branches:
+  only:
+   - master
+
+script: make test
