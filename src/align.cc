@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 namespace is {
 
@@ -171,7 +172,7 @@ int Align::Traceback_(const char* q, int64_t ql, const char* t, int64_t tl,
 					  std::vector<std::vector<int32_t> > &dir, int32_t row, int32_t col, std::vector<is::CigarOp> &cigar) {
 
 	cigar.clear();
-	cigar.reserve((int32_t) sqrt(row*row + col*col));	// An approximation, to save from reallocating every move.
+	cigar.reserve((int32_t) std::sqrt(row*row + col*col));	// An approximation, to save from reallocating every move.
 
 	q_start_ = 0;
 	q_end_ = ql;
