@@ -1,10 +1,11 @@
+
 #ifdef RUN_ALL_TESTS_
 
 #include <stdio.h>
 #include <stdint.h>
 #include "gtest/gtest.h"
 
-#include "test1.h"
+#include "test_global.h"
 
 GTEST_API_ int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
