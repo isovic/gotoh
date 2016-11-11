@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <string>
-#include "align.h"
+#include "align_gotoh.h"
 #include "align_test.h"
 using namespace std;
 
@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
   printf ("-------------------\n");
   printf ("Testing global alignment on long sequences.\n");
   AlignTestGlobal2();
+  printf ("Done!\n");
 
 //  testing::InitGoogleTest(&argc, argv);
 //  return RUN_ALL_TESTS();
