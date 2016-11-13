@@ -129,10 +129,75 @@ int AlignGotohHirsch::AlignLocal_(const char* q, int64_t ql, const char* t, int6
 
 int AlignGotohHirsch::Hirschberg_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm) {
 
-  // Storing only two lines for the main (M) and the vertical matrix (V).
-  MatrixType M(2, std::vector<cell_t>(tl+1, 0));
-  MatrixType V(2, std::vector<cell_t>(tl+1, 0));
+  std::vector<char> qr(ql, 0);
+  for (int32_t i=0; i<ql; i++) { qr[i] = q[ql-i-1]; }
 
+  std::vector<char> tr(tl, 0);
+  for (int32_t i=0; i<tl; i++) { tr[i] = t[tl-i-1]; }
+
+  std::vector<Coord2D> aln;
+  HirschbergRec_(q, ql, &qr[0], ql,
+                 t, tl, &tr[0], tl,
+                 p, gm,
+                 aln);
+
+
+
+//  // Storing only two lines for the main (M) and the vertical matrix (V).
+//  MatrixType M(2, std::vector<cell_t>(tl+1, 0));
+//  MatrixType V(2, std::vector<cell_t>(tl+1, 0));
+  return 0;
+}
+
+int AlignGotohHirsch::HirschbergRec_(const char *q, int64_t ql,       // Forward
+                                     const char *qr, int64_t qrl,     // Reverse complement
+                                     const char *t, int64_t tl,       // Forward
+                                     const char *tr, int64_t trl,     // Reverse complement
+                                     Penalties p, GlobalMargins gm,
+                                     std::vector<Coord2D> &aln) {
+
+  if (ql == 0 || tr == 0) { return 1; }
+
+  int64_t mid = ql / 2;
+
+  // Solve the upper half.
+  std::vector<cell_t> row1;
+  AlignBlock_(q, mid, t, tl, p, row1);
+
+  // Solve the bottom half.
+  std::vector<cell_t> row2;
+  To treba popraviti!
+  AlignBlock_(qr, mid, tr, tl, p, row2);
+
+  // row1 and row2 are actually (tl+1) in length.
+  cell_t max_score = row1[0] + row2[tl];
+  int64_t tpos1 = 0;     // Position of the best scoring upper cell in target coordinates.
+  int64_t tpos2 = 0;     // Position of the best scoring lower cell in target coordinates.
+  for (int64_t i=0; i<tl; i++) {
+    // Handle an indel.
+    cell_t sum1 = row1[i] + row2[tl - i];
+    if (sum1 > max_score) {
+      max_score = sum1;
+      tpos1 = i;
+      tpos2 = i;
+    }
+    // Handle a match/mismatch.
+    cell_t sum2 = row1[i] + row2[tl - (i + 1)];
+    if (sum2 > max_score) {
+      max_score = sum2;
+      tpos1 = i;
+      tpos2 = i + 1;
+    }
+  }
+  // Handle the final indel and avoid a branch in the for loop.
+  cell_t sum1 = row1[tl] + row2[0];
+  if (sum1 > max_score) {
+    max_score = sum1;
+    tpos1 = tl;
+    tpos2 = tl;
+  }
+
+  Coord2D coord1(mid
 
 
   return 0;
@@ -140,8 +205,8 @@ int AlignGotohHirsch::Hirschberg_(const char *q, int64_t ql, const char *t, int6
 
 // int AlignGotohHirsch::AlignBlock_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm,
 //                 MatrixType &M, MatrixType &V, const std::vector<cell_t> &H0_column) {
-int AlignGotohHirsch::AlignBlock_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm,
-                std::vector<cell_t> &last_row) {
+int AlignGotohHirsch::AlignBlock_(const char *q, int64_t ql, const char *t, int64_t tl,
+                                  Penalties p, std::vector<cell_t> &last_row) {
 
   // Storing only two lines for the main (M) and the vertical matrix (V).
   std::vector<std::vector<cell_t> > M(2, std::vector<cell_t>(tl+1, 0));
@@ -174,6 +239,7 @@ int AlignGotohHirsch::AlignBlock_(const char *q, int64_t ql, const char *t, int6
     M[0] = M[1];
   }
 
+  last_row = M[1];
 
 //  cell_t H1 = 0;
 //  cell_t[2] H = {H0, 0};

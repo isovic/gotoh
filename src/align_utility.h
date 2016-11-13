@@ -33,7 +33,7 @@ const char ALN_OP_TO_MATCH[] = "|  X-~";
 const char ALN_OP_TO_BASIC_CHAR[] = "MIDMSH";
 const int8_t ALN_OP_TO_EDLIB[] = {ALN_OP_EQ, ALN_OP_I, ALN_OP_D, ALN_OP_X, ALN_OP_S, ALN_OP_H, ALN_OP_NOP};
 
-const int32_t MINUS_INF = std::numeric_limits<int32_t>::min() + 1000000; // Allow a margin to skip overflow.
+const int32_t MINUS_INF = std::numeric_limits<int32_t>::min()/1000; // Allow a margin to skip overflow. Edit: Instead of a fixed margin, divide by 1000 to allow sumation in Hirschberg.
 
 class CigarOp {
 public:

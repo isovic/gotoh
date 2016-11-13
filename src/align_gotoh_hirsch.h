@@ -20,6 +20,13 @@
 
 namespace is {
 
+class Coord2D {
+ public:
+  int32_t x, y;
+
+  Coord2D(int32_t _x, int32_t _y) : x(_x), y(_y) { }
+};
+
 class AlignGotohHirsch : public Align {
  public:
   AlignGotohHirsch(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p,
@@ -39,11 +46,19 @@ class AlignGotohHirsch : public Align {
                    int32_t &q_start, int32_t &q_end, int32_t &t_start, int32_t &t_end, int32_t &score, std::vector<is::CigarOp> &cigar);
   int AlignLocal_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p);
 
+  int Hirschberg_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm);
+  int HirschbergRec_(const char *q, int64_t ql,       // Forward
+                     const char *qr, int64_t qrl,     // Reverse complement
+                     const char *t, int64_t tl,       // Forward
+                     const char *tr, int64_t trl,     // Reverse complement
+                     Penalties p, GlobalMargins gm,
+                     std::vector<Coord2D> &aln);
+
   // M is a two row matrix for calculating the alignment (main matrix).
   // V is also two row, the vertical Gotoh matrix.
   // H0 is the initial row penalty (zeroth element of the row).
-  int AlignBlock_(const char *q, int64_t ql, const char *t, int64_t tl, Penalties p, GlobalMargins gm,
-                  MatrixType &M, MatrixType &V, cell_t H0);
+  int AlignBlock_(const char *q, int64_t ql, const char *t, int64_t tl,
+                  Penalties p, std::vector<cell_t> &last_row);
 
 };
 
